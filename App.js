@@ -9,14 +9,41 @@ const Stack = createStackNavigator();
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        <Stack.Screen name="HomePage" component={HomePage} />
-        <Stack.Screen name="RestaurantScreen" component={RestaurantScreen} />
-        <Stack.Screen name="CartScreen" component={CartScreen} />
+      <Stack.Navigator>
+        <Stack.Screen 
+          name="HomePage" 
+          component={HomePage} 
+          options={{
+            title: 'Taste the Best',
+            headerStyle: {
+              backgroundColor: '#FF4B3A',
+              elevation: 0,
+              shadowOpacity: 0,
+            },
+            headerTitleStyle: {
+              fontWeight: 'bold',
+              fontSize: 24,
+              color: '#FFFFFF',
+              fontFamily: 'Arial',
+              letterSpacing: 1,
+            },
+            headerTitleAlign: 'center',
+            headerShadowVisible: false,
+          }}
+        />
+        <Stack.Screen 
+          name="RestaurantScreen" 
+          component={RestaurantScreen}
+          options={{
+            title: '',  // This will be set dynamically based on restaurant name
+            headerRight: () => null, // This will be overridden by the component
+          }}
+        />
+        <Stack.Screen 
+          name="CartScreen" 
+          component={CartScreen}
+          options={{ title: 'Shopping Cart' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

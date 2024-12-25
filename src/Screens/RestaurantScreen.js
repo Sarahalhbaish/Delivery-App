@@ -1,173 +1,207 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
-import { useState } from "react";
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-export default function RestaurantScreen({ route, navigation }) {
+export default function RestaurantScreen({ route }) {
   const { restaurant } = route.params;
+  const navigation = useNavigation();
   const [cartItems, setCartItems] = useState([]);
 
   const addToCart = (item) => {
-    setCartItems([...cartItems, item]);
+    setCartItems(prevItems => {
+      // Check if item already exists in cart
+      const existingItem = prevItems.find(cartItem => cartItem.id === item.id);
+      
+      if (existingItem) {
+        // If item exists, increase quantity
+        return prevItems.map(cartItem =>
+          cartItem.id === item.id
+            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+            : cartItem
+        );
+      }
+      
+      // If item doesn't exist, add it with quantity 1
+      return [...prevItems, { ...item, quantity: 1 }];
+    });
   };
 
+  // Calculate total items (including quantities)
+  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  React.useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity 
+          style={styles.cartButton}
+          onPress={() => navigation.navigate('CartScreen', { cartItems })}
+        >
+          <Text style={styles.cartIcon}>🛒</Text>
+          {totalItems > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{totalItems}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, cartItems, totalItems]);
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Restaurant Header */}
-      <View style={styles.restaurantHeader}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView>
+        {/* Restaurant Header */}
         <Image
           source={{ uri: restaurant.image }}
           style={styles.restaurantImage}
-          resizeMode="cover"
         />
         <View style={styles.headerInfo}>
           <Text style={styles.restaurantName}>{restaurant.name}</Text>
           <View style={styles.restaurantDetails}>
             <Text style={styles.rating}>⭐ {restaurant.rating}</Text>
-            <Text style={styles.deliveryTime}>
-              🕒 {restaurant.deliveryTime}
-            </Text>
+            <Text style={styles.deliveryTime}>🕒 {restaurant.deliveryTime}</Text>
           </View>
         </View>
-      </View>
 
-      {/* Menu Items */}
-      <View style={styles.menuSection}>
-        <Text style={styles.menuTitle}>Menu</Text>
-        {restaurant.menuItems.map((item) => (
-          <View key={item.id} style={styles.menuItem}>
-            <Image
-              source={{ uri: item.image }}
-              style={styles.menuItemImage}
-              resizeMode="cover"
-            />
-            <View style={styles.menuItemInfo}>
-              <Text style={styles.menuItemName}>{item.name}</Text>
-              <Text style={styles.menuItemDescription}>{item.description}</Text>
-              <View style={styles.priceRow}>
-                <Text style={styles.price}>${item.price.toFixed(2)}</Text>
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={() => {
-                    addToCart(item);
-                    navigation.navigate("CartScreen", {
-                      cartItems: [...cartItems, item],
-                    });
-                  }}
-                >
-                  <Text style={styles.addButtonText}>Add to Cart</Text>
-                </TouchableOpacity>
+        {/* Menu Items */}
+        <View style={styles.menuSection}>
+          <Text style={styles.menuTitle}>Menu</Text>
+          {restaurant.menuItems.map((item) => (
+            <View key={item.id} style={styles.menuItem}>
+              <View style={styles.itemInfo}>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemDescription}>{item.description}</Text>
+                <View style={styles.priceAndAction}>
+                  <Text style={styles.itemPrice}>${item.price}</Text>
+                  <TouchableOpacity 
+                    style={styles.addButton}
+                    onPress={() => addToCart(item)}
+                  >
+                    <Text style={styles.addButtonText}>Add</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
+              <Image
+                source={{ uri: item.image }}
+                style={styles.itemImage}
+              />
             </View>
-          </View>
-        ))}
-      </View>
-    </ScrollView>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-  },
-  restaurantHeader: {
-    padding: 15,
+    backgroundColor: '#fff',
   },
   restaurantImage: {
-    width: "100%",
+    width: '100%',
     height: 200,
-    borderRadius: 12,
   },
   headerInfo: {
-    marginTop: 15,
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   restaurantName: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   restaurantDetails: {
-    flexDirection: "row",
-    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   rating: {
     fontSize: 16,
     marginRight: 15,
-    color: "#666",
   },
   deliveryTime: {
     fontSize: 16,
-    color: "#666",
   },
   menuSection: {
     padding: 15,
   },
   menuTitle: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginBottom: 15,
-    color: "#333",
   },
   menuItem: {
-    flexDirection: "row",
-    marginBottom: 20,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    alignItems: 'center',
   },
-  menuItemImage: {
+  itemInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
+  itemName: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  itemDescription: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+  itemPrice: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  itemImage: {
     width: 100,
     height: 100,
     borderRadius: 8,
   },
-  menuItemInfo: {
-    flex: 1,
-    marginLeft: 12,
-    justifyContent: "space-between",
+  cartButton: {
+    marginRight: 15,
+    padding: 8,
   },
-  menuItemName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
+  cartIcon: {
+    fontSize: 24,
   },
-  menuItemDescription: {
-    fontSize: 14,
-    color: "#666",
-    marginVertical: 8,
+  cartBadge: {
+    position: 'absolute',
+    right: -6,
+    top: -6,
+    backgroundColor: '#FF4B3A',
+    borderRadius: 10,
+    width: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  priceRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  cartBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
-  price: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
+  priceAndAction: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
   },
   addButton: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: '#FF4B3A',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 45,
   },
   addButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
+    color: 'white',
+    fontWeight: '500',
+    fontSize: 10,
+    textAlign: 'center',
   },
 });
